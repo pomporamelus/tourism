@@ -3,8 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto, RecoverPassDto, UpdateUserDto } from './dto';
 import { UserRole, UsersEntity } from './entities';
-import * as randomstring from 'randomstring';
+import * as uuid from 'uuid'
 import * as bcrypt from 'bcrypt'
+import process from 'process';
 
 @Injectable()
 export class UsersService {
@@ -29,40 +30,56 @@ export class UsersService {
             }})
 
         if(!user){
-            throw new NotFoundException('Менеджер не найден')
+            throw new NotFoundException('User is not found')
         }
 
         return user
     }
 
-    private async sendPass(dto){
-        dto.password = randomstring.generate(7)
+    private async sendLink(dto){
+        dto.activationLink = uuid.v4()
+          
         var nodemailer = require('nodemailer');
 
         var transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: process.env.SMTP_PORT,
             service: 'gmail',
             auth: {
-              user: 'youremail@gmail.com',
-              pass: 'yourpassword'
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASSWORD
             }
         });
           
           var mailOptions = {
-            from: 'youremail@gmail.com',
+            from: process.env.SMTP_USER,
             to: dto.email,
-            subject: 'Kyrgyzstan tourism project',
-            text: 'Your password from tourism: '+dto.password
+            subject: 'Verification link for Adventure',
+            text: `Your verification link for Adventure: ${process.env.API_URL}/${dto.activationLink}`
         };
           
-        transporter.sendMail(mailOptions, function(error, info){
+        transporter.sendMail(mailOptions, function(error){
             if (error) {
                 throw new BadRequestException('Invalid mail, please try again');
             }
         });
 
-        const hashPass = await bcrypt.hash(dto.password, 5)
-        dto.password = hashPass
         return dto
+    }
+
+    async activate(activationLink: string){
+        const user = await this.UserRepository.findOne({ 
+            where: { 
+                activationLink: activationLink
+            }})
+        
+        if(!user){
+            throw new BadRequestException('Invalid link or link expired')
+        }
+
+        user.isActivated = true
+        await this.UserRepository.save(user)
+        return { message: 'Email sucessfully activated' }
     }
 
     async createUser(dto: CreateUserDto){
@@ -71,7 +88,9 @@ export class UsersService {
             throw new BadRequestException('User with this email already exists')
         }
 
-        const user = await this.sendPass(dto)
+        const user = await this.sendLink(dto)
+        const hashPass = await bcrypt.hash(dto.password, 5)
+        dto.password = hashPass
         user.roles = UserRole.USER
 
         await this.UserRepository.save(user)
@@ -80,9 +99,7 @@ export class UsersService {
     
     async updateUser(dto: UpdateUserDto){
         const user = await this.findById(dto.id)
-        if(!user){
-            throw new NotFoundException('User is not found')
-        } else if(dto.password){
+        if(dto.password){
             const hashPass = await bcrypt.hash(dto.password, 5)
             dto.password = hashPass
         }
@@ -97,7 +114,9 @@ export class UsersService {
             throw new BadRequestException('User with this email already exists')
         }
 
-        const user = await this.sendPass(dto)
+        const user = await this.sendLink(dto)
+        const hashPass = await bcrypt.hash(dto.password, 5)
+        dto.password = hashPass
         user.roles = UserRole.ADMIN
 
         await this.UserRepository.save(user)
@@ -136,7 +155,7 @@ export class UsersService {
             throw new NotFoundException('User is not found')
         }
 
-        const user = await this.sendPass(dto)
+        const user = await this.sendLink(dto)
         Object.assign(db_user, user)
         return await this.UserRepository.save(db_user)
     }
