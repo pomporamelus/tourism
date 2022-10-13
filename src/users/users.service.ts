@@ -3,14 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto, RecoverPassDto, UpdateUserDto } from './dto';
 import { UserRole, UsersEntity } from './entities';
-import * as randomstring from 'randomstring';
 import * as bcrypt from 'bcrypt'
+import { AuthService } from './auth/auth.service';
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(UsersEntity) 
-        private readonly UserRepository: Repository<UsersEntity>){}
+        private UserRepository: Repository<UsersEntity>,
+        private authService : AuthService
+        ){}
 
     async findAll(){
         return await this.UserRepository.find()
@@ -29,41 +31,12 @@ export class UsersService {
             }})
 
         if(!user){
-            throw new NotFoundException('Менеджер не найден')
+            throw new NotFoundException('User is not found')
         }
 
         return user
     }
 
-    private async sendPass(dto){
-        dto.password = randomstring.generate(7)
-        var nodemailer = require('nodemailer');
-
-        var transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-              user: 'youremail@gmail.com',
-              pass: 'yourpassword'
-            }
-        });
-          
-          var mailOptions = {
-            from: 'youremail@gmail.com',
-            to: dto.email,
-            subject: 'Kyrgyzstan tourism project',
-            text: 'Your password from tourism: '+dto.password
-        };
-          
-        transporter.sendMail(mailOptions, function(error, info){
-            if (error) {
-                throw new BadRequestException('Invalid mail, please try again');
-            }
-        });
-
-        const hashPass = await bcrypt.hash(dto.password, 5)
-        dto.password = hashPass
-        return dto
-    }
 
     async createUser(dto: CreateUserDto){
         const db_user = await this.findByEmail(dto.email)
@@ -71,7 +44,9 @@ export class UsersService {
             throw new BadRequestException('User with this email already exists')
         }
 
-        const user = await this.sendPass(dto)
+        const user = await this.authService.sendLink(dto)
+        const hashPass = await bcrypt.hash(dto.password, 5)
+        dto.password = hashPass
         user.roles = UserRole.USER
 
         await this.UserRepository.save(user)
@@ -80,9 +55,7 @@ export class UsersService {
     
     async updateUser(dto: UpdateUserDto){
         const user = await this.findById(dto.id)
-        if(!user){
-            throw new NotFoundException('User is not found')
-        } else if(dto.password){
+        if(dto.password){
             const hashPass = await bcrypt.hash(dto.password, 5)
             dto.password = hashPass
         }
@@ -97,7 +70,9 @@ export class UsersService {
             throw new BadRequestException('User with this email already exists')
         }
 
-        const user = await this.sendPass(dto)
+        const user = await this.authService.sendLink(dto)
+        const hashPass = await bcrypt.hash(dto.password, 5)
+        dto.password = hashPass
         user.roles = UserRole.ADMIN
 
         await this.UserRepository.save(user)
@@ -136,7 +111,7 @@ export class UsersService {
             throw new NotFoundException('User is not found')
         }
 
-        const user = await this.sendPass(dto)
+        const user = await this.authService.sendLink(dto)
         Object.assign(db_user, user)
         return await this.UserRepository.save(db_user)
     }

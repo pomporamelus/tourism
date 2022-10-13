@@ -15,7 +15,19 @@ export class UsersEntity implements IUser{
     password: string
     
     @Column()
-    name: string
+    fullName: string
+
+    @Column()
+    phoneNumber: string
+
+    @Column()
+    avatar: string
+
+    @Column()
+    activationLink: string
+
+    @Column({type: 'boolean', default: false})
+    isActivated: boolean
 
     @Column()
     role: UserRole
