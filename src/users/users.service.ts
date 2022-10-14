@@ -1,17 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateUserDto, RecoverPassDto, UpdateUserDto } from './dto';
+import { CreateUserDto,  UpdateUserDto } from './dto';
 import { UserRole, UsersEntity } from './entities';
 import * as bcrypt from 'bcrypt'
-import { AuthService } from './auth/auth.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(UsersEntity) 
         private UserRepository: Repository<UsersEntity>,
-        private authService : AuthService
         ){}
 
     async findAll(){
@@ -19,8 +18,12 @@ export class UsersService {
     }
 
     async findByEmail(email: string){
-        const db = await this.UserRepository.find()
-        const user = db.find((i) => i.email.includes(email))
+        // const db = await this.UserRepository.find()
+        // const user = db.find((i) => i.email.includes(email))
+        const user = await this.UserRepository.findOne({ 
+            where: { 
+                email: email
+            }})
         return user
     }
 
@@ -38,19 +41,12 @@ export class UsersService {
     }
 
 
-    async createUser(dto: CreateUserDto){
-        const db_user = await this.findByEmail(dto.email)
-        if(db_user){
-            throw new BadRequestException('User with this email already exists')
-        }
-
-        const user = await this.authService.sendLink(dto)
+    async createUser(dto: CreateUserDto, role: UserRole){
         const hashPass = await bcrypt.hash(dto.password, 5)
         dto.password = hashPass
-        user.roles = UserRole.USER
-
-        await this.UserRepository.save(user)
-        return user
+        dto.role = role
+        await this.UserRepository.save(dto)
+        return dto
     }
     
     async updateUser(dto: UpdateUserDto){
@@ -64,20 +60,6 @@ export class UsersService {
         return await this.UserRepository.save(user)
     }
 
-    async createAdmin(dto: CreateUserDto){
-        const db_user = await this.findByEmail(dto.email)
-        if(db_user){
-            throw new BadRequestException('User with this email already exists')
-        }
-
-        const user = await this.authService.sendLink(dto)
-        const hashPass = await bcrypt.hash(dto.password, 5)
-        dto.password = hashPass
-        user.roles = UserRole.ADMIN
-
-        await this.UserRepository.save(user)
-        return user
-    }
 
     async findAdmins(){
         const admins = await this.UserRepository.find({
@@ -105,14 +87,5 @@ export class UsersService {
         return { message: 'Admin is sucessfully deleted' }
     }
 
-    async recoverPass(dto: RecoverPassDto){
-        const db_user = await this.findByEmail(dto.email)
-        if(!db_user){
-            throw new NotFoundException('User is not found')
-        }
-
-        const user = await this.authService.sendLink(dto)
-        Object.assign(db_user, user)
-        return await this.UserRepository.save(db_user)
-    }
+    
 }

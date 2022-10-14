@@ -1,6 +1,6 @@
 import { Controller, Get, Put, Body, Delete, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { RoleGuard } from './auth/role-guard';
+import { RoleGuard } from '../auth/guard/role-guard';
 import { UpdateUserDto } from './dto';
 import { UserRole } from './entities';
 import { Role } from './entities/role-decorator';
