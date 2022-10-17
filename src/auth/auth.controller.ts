@@ -2,8 +2,8 @@ import {Post, Body, Controller, Param, Get, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateUserDto, RecoverPassDto } from 'src/users/dto';
 import { loginUserDto } from 'src/users/dto/login-user.dto';
-import { UserRole, UsersEntity } from 'src/users/entities';
-import { Roles } from 'src/users/entities/role-decorator';
+import { UserRole,  } from 'src/users/entities';
+import { Role } from 'src/users/entities/role-decorator';
 import { AuthService } from './auth.service';
 import { RoleGuard } from './guard/role-guard';
 @ApiTags('authorization')
@@ -16,7 +16,7 @@ export class AuthController {
         return await this.service.registUser(dto)
     }
     @ApiOperation({summary : 'to regist admin'})
-    @Roles( UserRole.SUPERADMIN)
+    @Role( UserRole.SUPERADMIN)
     @UseGuards(RoleGuard)
     @Post('/registAdmin')
     async registAdmin(@Body() dto: CreateUserDto) {
@@ -34,7 +34,7 @@ export class AuthController {
     }
 
     @ApiOperation({summary : 'to recover your password'})
-    @Roles(UserRole.ADMIN, UserRole.SUPERADMIN,UserRole.USER)
+    @Role(UserRole.ADMIN, UserRole.SUPERADMIN,UserRole.USER)
     @UseGuards(RoleGuard)
     @Post('/recoverPass')
     async recoverPass(@Body() dto: RecoverPassDto) {
