@@ -12,5 +12,5 @@ export const DB_CONFIG : TypeOrmModuleOptions = {
     database: process.env.POSTGRES_DB,
     entities: [UsersEntity],
     autoLoadEntities: true,
-    
+    synchronize:true
 }

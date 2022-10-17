@@ -7,6 +7,9 @@ import {  UserRole, UsersEntity } from '../users/entities';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto, RecoverPassDto } from 'src/users/dto';
+import * as dotenv from 'dotenv'
+import { loginUserDto } from 'src/users/dto/login-user.dto';
+dotenv.config()
 @Injectable()
 export class AuthService {
     constructor(
@@ -25,7 +28,7 @@ export class AuthService {
         }
 
         const user = await this.sendLink(dto)
-        await this.userService.createUser(user, UserRole.USER)
+       return await this.userService.createUser(user, user.role)
     }
      async registAdmin(dto : CreateUserDto) {
         const db_user = await this.userService.findByEmail(dto.email)
@@ -39,37 +42,31 @@ export class AuthService {
 
 
     private async sendLink(dto){
-        dto.activationLink = uuid.v4()
+        dto.activationLink = await  uuid.v4()
           
         var nodemailer = require('nodemailer');
 
         var transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port: process.env.SMTP_PORT,
-            service: 'gmail',
+            secure: true,
             auth: {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASSWORD
-            }
+              user: process.env.SENDGRID_USER,
+              pass: process.env.SENDGRID_API_KEY
+            },
         });
           
-          var mailOptions = {
-            from: process.env.SMTP_USER,
-            to: dto.email,
-            subject: 'Verification link for Adventure',
-            text: `Your verification link for Adventure: ${process.env.API_URL}/${dto.activationLink}`
-        };
           
-        transporter.sendMail(mailOptions, function(error){
-            if (error) {
-                throw new BadRequestException('Invalid mail, please try again');
-            }
-        });
-
+        let info = await transporter.sendMail({
+            from: process.env.SMPT_USER, // sender address
+            to: dto.email, // list of receivers
+            subject: "your verification link", // Subject line
+            text: `Your verification link for Adventure: ${process.env.API_URL}/auth/${dto.activationLink}`, // plain text body
+          })
         return dto
     }
 
-    private async activate(activationLink: string){
+   async activate(activationLink: string){
         const user = await this.UserRepository.findOne({ 
             where: { 
                 activationLink: activationLink
@@ -81,9 +78,11 @@ export class AuthService {
 
         user.isActivated = true
         await this.UserRepository.save(user)
-        return true
+        return {
+            message:"user was successfully activated"
+        }
     }
-     async login (user: UsersEntity) {
+     async login (user: loginUserDto) {
      const user2 = await this.userService.findByEmail(user.email)
      if(!user2) {
         throw new BadRequestException('user email is incorrect')
@@ -95,10 +94,10 @@ export class AuthService {
     if(!user2.isActivated){
         throw new BadRequestException('user link did not activated')
     }
-    return this.generateToken(user)
+    return this.generateToken(user2)
     }
     private async generateToken(user: UsersEntity) {
-     const payLoad = {phoneNumber: user.phoneNumber, id: user.id, email: user.email}
+     const payLoad = { id: user.id, email: user.email, role: user.role}
      return {
         token: this.jwtService.sign(payLoad)
      }
@@ -110,8 +109,7 @@ export class AuthService {
             throw new NotFoundException('User is not found')
         }
 
-        const user = await this.sendLink(dto)
-        Object.assign(db_user, user)
+        Object.assign(db_user, dto)
         return await this.UserRepository.save(db_user)
     }
 }

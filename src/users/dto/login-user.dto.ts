@@ -3,9 +3,10 @@ import { IsString, Length } from "class-validator";
 
 
 export class loginUserDto {
+    @ApiProperty({example: 'yourname@gmail.com'})
     email: string
-    @ApiProperty({example: '12345', description: 'пароль'})
-    @IsString({message: 'Должно быть строкой'})
-    @Length(4, 16, {message: 'Не меньше 4 и не больше 16'})
+    @ApiProperty({example: '12345', description: 'password to login you'})
+    @IsString({message: 'must be string'})
+    @Length(4, 16, {message: 'no less 4 and no more 16 letters'})
     password: string;
 }

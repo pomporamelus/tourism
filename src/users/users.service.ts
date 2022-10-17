@@ -46,7 +46,9 @@ export class UsersService {
         dto.password = hashPass
         dto.role = role
         await this.UserRepository.save(dto)
-        return dto
+        return {
+            message: 'check your gmail'
+        }
     }
     
     async updateUser(dto: UpdateUserDto){
