@@ -6,10 +6,10 @@ import * as bcrypt from 'bcrypt'
 import {  UserRole, UsersEntity } from '../users/entities';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateUserDto, RecoverPassDto } from 'src/users/dto';
+import { CreateUserDto, loginUserDto, RecoverPassDto } from 'src/users/dto';
 import * as dotenv from 'dotenv'
-import { loginUserDto } from 'src/users/dto/login-user.dto';
 dotenv.config()
+
 @Injectable()
 export class AuthService {
     constructor(
@@ -30,6 +30,7 @@ export class AuthService {
         const user = await this.sendLink(dto)
        return await this.userService.createUser(user, user.role)
     }
+    
      async registAdmin(dto : CreateUserDto) {
         const db_user = await this.userService.findByEmail(dto.email)
         if(db_user){
@@ -84,24 +85,26 @@ export class AuthService {
     }
      async login (user: loginUserDto) {
      const user2 = await this.userService.findByEmail(user.email)
-     if(!user2) {
-        throw new BadRequestException('user email is incorrect')
-     }
-    const passEqual = await bcrypt.compare(user.password, user2.password)
-    if(!passEqual) {
-        throw new BadRequestException('user password is incorrect')
-    }
-    if(!user2.isActivated){
-        throw new BadRequestException('user link did not activated')
-    }
-    return this.generateToken(user2)
+
+        if(!user2) {
+            throw new BadRequestException('user email is incorrect')
+        }
+
+        const passEqual = await bcrypt.compare(user.password, user2.password)
+        if(!passEqual) {
+            throw new BadRequestException('user password is incorrect')
+        } else if(!user2.isActivated){
+            throw new BadRequestException('user link did not activated')
+        }
+
+        return this.generateToken(user2)
     }
     private async generateToken(user: UsersEntity) {
-     const payLoad = { id: user.id, email: user.email, role: user.role}
-     return {
-        token: this.jwtService.sign(payLoad)
-     }
-     
+        const payLoad = { id: user.id, email: user.email, role: user.role}
+        
+        return {
+            token: this.jwtService.sign(payLoad)
+        }
     }
      async recoverPass(dto: RecoverPassDto){
         const db_user = await this.userService.findByEmail(dto.email)

@@ -10,9 +10,9 @@ export const DB_CONFIG : TypeOrmModuleOptions = {
     username: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
-    entities: [UsersEntity],
+    entities: ['dist/**/*.entity{.ts,.js}'],
     autoLoadEntities: true,
-    synchronize:true,
+    synchronize: true,
     // ssl : {
     //     rejectUnauthorized: false
     // }

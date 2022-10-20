@@ -17,8 +17,6 @@ export class UsersService {
     }
 
     async findByEmail(email: string){
-        // const db = await this.UserRepository.find()
-        // const user = db.find((i) => i.email.includes(email))
         const user = await this.UserRepository.findOne({ 
             where: { 
                 email: email
@@ -87,6 +85,4 @@ export class UsersService {
         await this.UserRepository.remove(user)
         return { message: 'Admin is sucessfully deleted' }
     }
-
-    
 }

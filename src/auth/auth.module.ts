@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersEntity } from 'src/users/entities';
@@ -11,9 +11,9 @@ import { AuthService } from './auth.service';
     TypeOrmModule.forFeature([UsersEntity]),
     UsersModule,
     JwtModule.register({
-    secret: process.env.PRIVATE_KEY || 'SECRET',
-    signOptions : {
-      expiresIn: '7d'
+      secret: process.env.PRIVATE_KEY || 'SECRET',
+      signOptions : {
+        expiresIn: '7d'
     }
   })],
   controllers: [AuthController],

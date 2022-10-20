@@ -1,24 +1,29 @@
 import { Controller, Get, Put, Body, Delete, Param, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { RoleGuard } from '../auth/guard/role-guard';
 import { UpdateUserDto } from './dto';
-import { UserRole } from './entities';
+import { UserRole, UsersEntity } from './entities';
 import {  Role } from './entities/role-decorator';
 import { UsersService } from './users.service';
+
 @ApiBearerAuth()
-@ApiTags('user')
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
     constructor(private UsersService: UsersService){}
 
     @Get()
+    @ApiOkResponse({ type: UsersEntity })
+    @ApiForbiddenResponse({ description: 'No access' })
     @Role(UserRole.SUPERADMIN)
-     @UseGuards(RoleGuard)
+    @UseGuards(RoleGuard)
     async findAll(){
         return await this.UsersService.findAll()
     }
 
     @Put()
+    @ApiOkResponse({ type: UpdateUserDto })
+    @ApiNotFoundResponse({ description: 'User is not found' })
     @Role(UserRole.ADMIN, UserRole.SUPERADMIN,UserRole.USER)
     @UseGuards(RoleGuard)
     async updateUser(@Body() dto: UpdateUserDto){
@@ -26,6 +31,8 @@ export class UsersController {
     }
 
     @Get('/admins')
+    @ApiOkResponse({ type: UsersEntity })
+    @ApiForbiddenResponse({ description: 'No access' })
     @Role(UserRole.SUPERADMIN)
     @UseGuards(RoleGuard)
     async findAdmins(){
@@ -33,6 +40,9 @@ export class UsersController {
     }
 
     @Delete(':id')
+    @ApiOkResponse({ description: 'User is sucessfully deleted' })
+    @ApiNotFoundResponse({ description: 'User is not found' })
+    // @ApiForbiddenResponse({ description: 'No access' })
     // @Role(UserRole.ADMIN, UserRole.SUPERADMIN)
     // @UseGuards(RoleGuard)
     async deleteUser(@Param('id') id: number){
@@ -40,6 +50,10 @@ export class UsersController {
     }
 
     @Delete('admin/:id')
+    @ApiOkResponse({ description: 'Admin is sucessfully deleted' })
+    @ApiNotFoundResponse({ description: 'User is not found' })
+    @ApiBadRequestResponse({ description: 'This user is not admin' })
+    @ApiForbiddenResponse({ description: 'No access' })
     @Role(UserRole.SUPERADMIN)
     @UseGuards(RoleGuard)
     async deleteAdmin(@Param('id') id: number){
