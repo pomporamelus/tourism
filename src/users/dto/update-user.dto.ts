@@ -1,24 +1,24 @@
-import { ApiProperty } from "@nestjs/swagger"
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger"
 import { IsNumberString, Length } from "class-validator"
 
 export class UpdateUserDto{
     @ApiProperty()
     id: number
 
-    @ApiProperty({example: 'yourname@gmail.com'})
-    email?: string
+    @ApiPropertyOptional({example: 'yourname@gmail.com'})
+    email: string
 
-    @ApiProperty({example: 'islam azamatov'})
-    name?: string
+    @ApiPropertyOptional({example: 'islam azamatov'})
+    name: string
 
-    @ApiProperty({example: '556335577'})
+    @ApiPropertyOptional({example: '556335577'})
     @IsNumberString()
     @Length(9,10)
-    phoneNumber?: string
+    phoneNumber: string
     
-    @ApiProperty({example: 'user123'})
-    password?: string
+    @ApiPropertyOptional({example: 'user123'})
+    password: string
  
-    @ApiProperty({example: 'https://bit.ly/3Csmz8Q'})
-    avatar?: string
+    @ApiPropertyOptional({example: 'https://bit.ly/3Csmz8Q'})
+    avatar: string
 }
