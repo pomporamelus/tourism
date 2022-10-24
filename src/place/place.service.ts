@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, NotFoundException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePlaceDto, UpdatePlaceDto } from './dto';
@@ -43,7 +43,7 @@ export class PlaceService {
         })
 
         if(!place){
-            throw new BadRequestException('Place is not found')
+            throw new NotFoundException('Place is not found')
         }
 
         return place
@@ -82,7 +82,7 @@ export class PlaceService {
             })
 
             if(!place_en){
-                throw new BadRequestException('Place is not found')
+                throw new NotFoundException('Place is not found')
             }
 
             return this.findById(lang, place_en.place_id)
@@ -106,7 +106,7 @@ export class PlaceService {
             })
 
             if(!place_en){
-                throw new BadRequestException('Place is not found')
+                throw new NotFoundException('Place is not found')
             }
 
             Object.assign(place_en, en)
@@ -120,7 +120,7 @@ export class PlaceService {
         })
 
         if(!place){
-            throw new BadRequestException('Place is not found')
+            throw new NotFoundException('Place is not found')
         }
 
         Object.assign(place, dto)

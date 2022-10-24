@@ -24,6 +24,7 @@ export class UsersController {
     @Put()
     @ApiOkResponse({ type: UpdateUserDto })
     @ApiNotFoundResponse({ description: 'User is not found' })
+    @ApiBadRequestResponse({ description: 'Validation error' })
     @Role(UserRole.ADMIN, UserRole.SUPERADMIN,UserRole.USER)
     @UseGuards(RoleGuard)
     async updateUser(@Body() dto: UpdateUserDto){
