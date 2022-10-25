@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { CreateUserDto,  UpdateUserDto } from './dto';
 import { UserRole, UsersEntity } from './entities';
 import * as bcrypt from 'bcrypt'
+import process from 'process';
 
 @Injectable()
 export class UsersService {
@@ -59,7 +60,6 @@ export class UsersService {
         return await this.UserRepository.save(user)
     }
 
-
     async findAdmins(){
         const admins = await this.UserRepository.find({
             where: { 
@@ -86,3 +86,4 @@ export class UsersService {
         return { message: 'Admin is sucessfully deleted' }
     }
 }
+
